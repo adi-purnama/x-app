@@ -13,50 +13,56 @@ class Recipe extends CI_Controller{
           // run query
           $response_data = $this->Recipe_model->get_all_recipes()->result(); // not use limit for a while
         } elseif(!$recipe_id=='') {
-          // run query
-          $response_data = $this->Recipe_model->get_detail_recipe($recipe_id)->row();
-          break;
+          $response_data = $this->Recipe_model->get_detail_recipe($recipe_id);
         }
         break;
 
       case 'post':
         $request_data = json_decode($this->security->xss_clean($this->input->raw_input_stream));
-
         $recipe['id'] = md5(str_replace(" ","",date("Y-m-d-H-i-s-u"))); // will create in helper
 
-        $recipe['name'] = $request_data->name;
-        $recipe['description'] = $request_data->description;
-
-        // run query
-        $this->Recipe_model->insert_recipe($recipe);
-        // get result by id
-        $response_data = $this->Recipe_model->get_detail_recipe($recipe['id'])->row();
+        if(!$recipe_id==''){
+          $response_data = array('message'=>'method not allowed');
+        } else {
+          if(isset($request_data->name) && isset($request_data->description)){
+            $recipe['name'] = $request_data->name;
+            $recipe['description'] = $request_data->description;
+            // run query
+            $this->Recipe_model->insert_recipe($recipe);
+            // get result by id
+            $response_data = $this->Recipe_model->get_detail_recipe($recipe['id']);
+          } else {
+            $response_data = array("message"=>"form harus lengkap");
+          }
+        }
         break;
 
-      case 'put':
-        $request_data = json_decode($this->security->xss_clean($this->input->raw_input_stream));
-
-        $recipe = array();
-        if(isset($request_data->name)){
-          $recipe['name'] = $request_data->name;
-        }
-        elseif(isset($request_data->description)){
-          $recipe['description'] = $request_data->description;
-        }
-        if(count($recipe)>0){
-          // run update query
-          $this->Recipe_model->update_recipe($recipe_id, $recipe);
-          // get response
-          $response_data = $this->Recipe_model->get_detail_recipe($recipe_id)->row();
+      case 'patch':
+        if(!$this->Recipe_model->get_detail_recipe($recipe_id)->num_rows() == 0){
+          $request_data = json_decode($this->security->xss_clean($this->input->raw_input_stream));
+          $recipe = array();
+          if(isset($request_data->name)){
+            $recipe['name'] = $request_data->name;
+          }
+          elseif(isset($request_data->description)){
+            $recipe['description'] = $request_data->description;
+          }
+          if(count($recipe)>0){
+            // run update query
+            $this->Recipe_model->update_recipe($recipe_id, $recipe);
+            // get response
+            $response_data = $this->Recipe_model->get_detail_recipe($recipe_id)->row();
+          } else {
+            $response_data = array("message"=>"missing something!");
+          }
         } else {
-          $response_data = array("message"=>"missing something!");
+          $response_data = array('message'=>'not valid id');
         }
         break;
 
       case 'delete':
         // run query
-        $this->Recipe_model->delete_recipe($recipe_id);
-        $response_data = array('message'=>'recipe '.$recipe_id.' deleted');
+        $response_data = $this->Recipe_model->delete_recipe($recipe_id);
         break;
 
       default:

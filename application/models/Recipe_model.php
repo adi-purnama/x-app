@@ -12,11 +12,20 @@ class Recipe_model extends CI_Model {
     }
     function get_detail_recipe($recipe_id){
       $query = $this->db->get_where('recipe', array('id' => $recipe_id));
-      return $query;
+      if($this->db->affected_rows()){
+        $response_data = $query->row();
+      } else {
+        $response_data = array(
+          'message' => 'not vlid id',
+        );
+      }
+      return $response_data;
     }
+
     function insert_recipe($recipe_data){
         $this->db->insert('recipe', $recipe_data);
     }
+    
     function update_recipe($recipe_id, $data){
       $this->db->set($data);
       $this->db->where('id', $recipe_id);
@@ -26,6 +35,17 @@ class Recipe_model extends CI_Model {
     {
       $this->db->where('id', $recipe_id);
       $this->db->delete('recipe');
+      if($this->db->affected_rows()){
+        $response_data = array(
+          'id' => $recipe_id,
+          'status' => 'deleted'
+        );
+      } else {
+        $response_data = array(
+          'message' => 'not vlid id',
+        );
+      }
+      return $response_data;
     }
 
 }
